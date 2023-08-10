@@ -8,6 +8,5 @@ import com.rapidesell.model.Admin;
 public interface AdminDao extends JpaRepository<Admin, Integer> {
 	
 	Admin findByEmailidAndPassword(String emailId , String password);
-	Admin findByEmailid(String emailId);
 
 }

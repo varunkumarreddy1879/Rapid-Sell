@@ -2,6 +2,8 @@ package com.rapidesell.controller;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+
+import com.rapidesell.service.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,9 +16,10 @@ import com.rapidesell.model.Admin;
 
 @Controller
 public class AdminController {
-	
+
+
 	@Autowired
-	private AdminDao adminDao;
+	private AdminService adminService;
 	
 	@GetMapping("/")
 	public String goToHomeDuringStart() {
@@ -48,11 +51,11 @@ public class AdminController {
 	@PostMapping("/adminregister")
 	public ModelAndView registerAdmin(@ModelAttribute Admin admin) {
 		ModelAndView mv = new ModelAndView();
-		if(this.adminDao.save(admin)!= null) {
+
+		if(this.adminService.save(admin)!= null) {
 			mv.addObject("status", admin.getFirstname()+" Successfully Registered as ADMIN");
 			mv.setViewName("adminlogin");
 		}
-		
 		else {
 			mv.addObject("status", admin.getFirstname()+" Failed to Registered as ADMIN");
 			mv.setViewName("adminregister");
@@ -66,7 +69,7 @@ public class AdminController {
 	public ModelAndView loginAdmin(HttpServletRequest request, @RequestParam("emailid") String emailId, @RequestParam("password") String password ) {
 		ModelAndView mv = new ModelAndView();
 		
-		Admin admin = adminDao.findByEmailidAndPassword(emailId, password);
+		Admin admin = adminService.findByEmailidAndPassword(emailId, password);
 		
 		if(admin != null) {
 			HttpSession session = request.getSession();

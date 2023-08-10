@@ -10,6 +10,5 @@ import com.rapidesell.model.Cart;
 public interface CartDao extends JpaRepository<Cart, Integer> {
 	
 	List<Cart> findByUserId(int userId);
-	Long countByUserId(int userId);
 
 }

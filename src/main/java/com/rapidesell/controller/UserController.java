@@ -2,6 +2,8 @@ package com.rapidesell.controller;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+
+import com.rapidesell.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,15 +11,14 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
-import com.rapidesell.dao.UserDao;
 import com.rapidesell.model.User;
 
 @Controller
 public class UserController {
-	
 	@Autowired
-	private UserDao userDao;
+	private UserService userService;
 	
+
 	@GetMapping("/userlogin")
 	public String goToLoginPage() {
 		return "userlogin";
@@ -43,7 +44,8 @@ public class UserController {
 	@PostMapping("/userregister")
 	public ModelAndView registerAdmin(@ModelAttribute User user) {
 		ModelAndView mv = new ModelAndView();
-		if(this.userDao.save(user)!= null) {
+		User user1 = userService.registerAdmin(user);
+		if(user1!=null) {
 			mv.addObject("status", user.getFirstname()+" Successfully Registered!");
 			mv.setViewName("userlogin");
 		}
@@ -61,15 +63,10 @@ public class UserController {
 	public ModelAndView forgetpassword(@RequestParam("email") String email, @RequestParam("pass") String password,
 			@RequestParam("phone") String phone) {
 		ModelAndView mv = new ModelAndView();
+		User user=userService.resetPassword(email,phone,password);
+
 		
-		User user = userDao.findByEmailidAndMobileno(email, phone);
-		
-		if(user != null) {
-			user.setPassword(password);
-			userDao.save(user);
-		}
-		
-		else {
+		if(user==null){
 			mv.addObject("status", "No User found!");
 			mv.setViewName("userregister");
 		}
@@ -81,7 +78,7 @@ public class UserController {
 	public ModelAndView loginAdmin(HttpServletRequest request, @RequestParam("emailid") String emailId, @RequestParam("password") String password ) {
 		ModelAndView mv = new ModelAndView();
 		
-		User user = userDao.findByEmailidAndPassword(emailId, password);
+		User user = userService.findByEmailidAndPassword(emailId, password);
 		
 		if(user != null) {
 			HttpSession session = request.getSession();

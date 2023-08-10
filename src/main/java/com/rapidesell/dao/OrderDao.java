@@ -10,8 +10,7 @@ import com.rapidesell.model.Orders;
 public interface OrderDao extends JpaRepository<Orders , Integer> {
 	
 	List<Orders> findByOrderId(String orderId);
-	List<Orders> findByUserId(int userId);
-	List<Orders> findByOrderDate(String orderDate);
 	List<Orders> findByOrderDateAndUserId(String orderDate, int userId);
 
+	List<Orders> findAll();
 }

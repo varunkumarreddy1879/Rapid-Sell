@@ -13,13 +13,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
 
+import com.rapidesell.service.FoodService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
-import com.rapidesell.dao.FoodDao;
 import com.rapidesell.model.Food;
 
 @Controller
@@ -27,11 +27,12 @@ import com.rapidesell.model.Food;
 public class FoodController {
 	
 	@Autowired
-	private FoodDao foodDao;
+	private FoodService foodService;
 	
 	@PostMapping("/addfood")
 	public ModelAndView addProduct(HttpServletRequest request, HttpSession session) throws IOException, ServletException {
-        ModelAndView mv = new ModelAndView();
+
+		ModelAndView mv = new ModelAndView();
 		
 		String name=request.getParameter("name");
 		String description=request.getParameter("description");
@@ -46,31 +47,23 @@ public class FoodController {
 		
 		try
 		{
-		FileOutputStream fos=new FileOutputStream(uploadPath);
-		InputStream is=part.getInputStream();
+		      FileOutputStream fos=new FileOutputStream(uploadPath);
+		      InputStream is=part.getInputStream();
 		
-		byte[] data=new byte[is.available()];
-		is.read(data);
-		fos.write(data);
-		fos.close();
+		      byte[] data=new byte[is.available()];
+		      is.read(data);
+		      fos.write(data);
+		      fos.close();
 		}
-		
 		catch(Exception e)
 		{
 			e.printStackTrace();
 		}
-		
-		Food food = new Food();
-		food.setCategoryId(categoryId);
-		food.setImagePath(fileName);
-		food.setName(name);
-		food.setPrice(price);
-		food.setDiscount(discount);
-		food.setDescription(description);
+
 	    
-		food = foodDao.save(food);
+		Food food = foodService.addProduct(categoryId,fileName,name,price,description,discount);
 		
-		if(food != null )
+		if(food!=null )
 	    {
 			mv.addObject("status", "Food Added Successfully.");
 	    }
@@ -86,21 +79,23 @@ public class FoodController {
 	
 	@PostMapping("/updatefood")
 	public ModelAndView updateProduct(HttpServletRequest request, HttpSession session) throws IOException, ServletException {
-		 ModelAndView mv = new ModelAndView();
-			int id = Integer.parseInt(request.getParameter("id"));
-			String name=request.getParameter("name");
-			String description=request.getParameter("description");
-			Double price=Double.parseDouble(request.getParameter("price"));
-			Double discount=Double.parseDouble(request.getParameter("discount"));
-			int categoryId=Integer.parseInt(request.getParameter("categoryId"));
-			Part part=request.getPart("image");	
+
+		ModelAndView mv = new ModelAndView();
+
+		int id = Integer.parseInt(request.getParameter("id"));
+		String name=request.getParameter("name");
+		String description=request.getParameter("description");
+		Double price=Double.parseDouble(request.getParameter("price"));
+		Double discount=Double.parseDouble(request.getParameter("discount"));
+		int categoryId=Integer.parseInt(request.getParameter("categoryId"));
+		Part part=request.getPart("image");
+		String fileName=part.getSubmittedFileName();
+
 			
-			String fileName=part.getSubmittedFileName();
+		String uploadPath="C:\\Users\\admin\\Desktop\\project\\online-food-order\\src\\main\\webapp\\resources\\productpic\\"+fileName;
 			
-			String uploadPath="C:\\Users\\admin\\Desktop\\project\\online-food-order\\src\\main\\webapp\\resources\\productpic\\"+fileName;
-			
-			try
-			{
+		try
+		{
 			FileOutputStream fos=new FileOutputStream(uploadPath);
 			InputStream is=part.getInputStream();
 			
@@ -108,44 +103,34 @@ public class FoodController {
 			is.read(data);
 			fos.write(data);
 			fos.close();
-			}
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
 			
-			catch(Exception e)
-			{
-				e.printStackTrace();
-			}
+		Food food = foodService.updateProduct(id,name,description,price,discount,categoryId,part,fileName);
+
 			
-			Food food = new Food();
-			food.setCategoryId(categoryId);
-			food.setImagePath(fileName);
-			food.setName(name);
-			food.setPrice(price);
-			food.setDiscount(discount);
-			food.setDescription(description);
-		    food.setId(id);
-			food = foodDao.save(food);
+		if(food!=null)
+		{
+			mv.addObject("status", "Food updated Successfully.");
+		}
+		else
+		{
+			mv.addObject("status", "Failed to update food.");
+		}
+
+		mv.setViewName("index");
 			
-			if(food != null )
-		    {
-				mv.addObject("status", "Food updated Successfully.");
-		    }
-		    
-		    else
-		    {
-			   mv.addObject("status", "Failed to update food.");
-		    }
-			
-			mv.setViewName("index");
-			
-			return mv;
+		return mv;
 	}
 	
 	@GetMapping("/searchfood")
 	public ModelAndView searchProductByName(@RequestParam("foodname") String foodName) throws IOException, ServletException {
+
 		ModelAndView mv = new ModelAndView();
-		List<Food> foods = new ArrayList<>();
-		foods = foodDao.findByNameContainingIgnoreCase(foodName);
-		   
+		List<Food> foods = foodService.searchProductByName(foodName);
 		mv.addObject("sentFromOtherSource","yes");
 		mv.addObject("foods", foods);
 		mv.setViewName("index");
@@ -155,14 +140,9 @@ public class FoodController {
 	
 	@GetMapping("/food")
 	public ModelAndView getFood(@RequestParam("foodId") int foodId) throws IOException, ServletException {
+
 		ModelAndView mv = new ModelAndView();
-		Food food = null;
-		Optional<Food> o = foodDao.findById(foodId);
-		
-		if(o.isPresent()) {
-			food = o.get();
-		}
-		   
+		Food food = foodService.getFood(foodId);
 		mv.addObject("food", food);
 		mv.setViewName("food");
 		
@@ -171,17 +151,9 @@ public class FoodController {
 	
 	@GetMapping("/deletefood")
 	public ModelAndView deleteFood(@RequestParam("foodId") int foodId) throws IOException, ServletException {
+
 		ModelAndView mv = new ModelAndView();
-		
-		Food food = null;
-		Optional<Food> o = foodDao.findById(foodId);
-		
-		if(o.isPresent()) {
-			food = o.get();
-		}
-		
-		foodDao.delete(food);
-		   
+		foodService.deleteFood(foodId);
 		mv.addObject("status", "Food Deleted Successfully!");
 		mv.setViewName("index");
 		
@@ -190,15 +162,9 @@ public class FoodController {
 	
 	@GetMapping("/updatefood")
 	public ModelAndView updateFood(@RequestParam("foodId") int foodId) throws IOException, ServletException {
+
 		ModelAndView mv = new ModelAndView();
-		
-		Food food = null;
-		Optional<Food> o = foodDao.findById(foodId);
-		
-		if(o.isPresent()) {
-			food = o.get();
-		}
-		   
+		Food food=foodService.getFood(foodId);
 		mv.addObject("food", food);
 		mv.setViewName("updatefood");
 		

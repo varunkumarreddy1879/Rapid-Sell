@@ -2,6 +2,7 @@ package com.rapidesell.controller;
 
 import java.util.Optional;
 
+import com.rapidesell.service.CartService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,13 +17,13 @@ import com.rapidesell.model.Cart;
 public class CartController {
 
 	@Autowired
-	private CartDao cartDao;
+	private CartService cartService;
 	
 	@GetMapping("/addToCart")
 	public ModelAndView addtoCart(@ModelAttribute Cart cart) {
 		ModelAndView mv = new ModelAndView();
 	
-		cartDao.save(cart);
+		cartService.save(cart);
 		mv.addObject("status", "Foods added to cart!");
 		mv.setViewName("index");
 		
@@ -33,16 +34,8 @@ public class CartController {
 	@GetMapping("/deletecart")
 	public ModelAndView deleteProductFromCart(@RequestParam("cartId") int  cartId) {
 		ModelAndView mv = new ModelAndView();
-		
-		Cart cart = new Cart();
-	
-		Optional<Cart> o = cartDao.findById(cartId);
-		if(o.isPresent()) {
-			cart = o.get();
-		}
-		
-		cartDao.delete(cart);
-		
+		cartService.deleteProductFromCart(cartId);
+
 		mv.addObject("status", "Selected Food removed from Cart!");
 		mv.setViewName("index");
 		

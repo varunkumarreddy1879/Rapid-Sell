@@ -5,6 +5,7 @@ import java.util.List;
 
 import javax.servlet.http.HttpSession;
 
+import com.rapidesell.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,38 +23,19 @@ import com.rapidesell.utility.Helper;
 
 @Controller
 public class OrderController {
-	
+
 	@Autowired
-	private CartDao cartDao;
+	OrderService orderService;
 	
-	@Autowired
-	private OrderDao orderDao;
+
 
 	@PostMapping("/order")
 	public ModelAndView orderfoods(HttpSession session) {
         ModelAndView mv = new ModelAndView();
 		
         User user = (User)session.getAttribute("active-user");
-        
-		String orderId = Helper.getAlphaNumericOrderId(10);
-		String orderedDate = LocalDate.now().toString();
-		
-		List<Cart> carts = cartDao.findByUserId(user.getId());
-		
-		for(Cart cart : carts) {
-			Orders order = new Orders();
-			order.setOrderDate(orderedDate);
-			order.setOrderId(orderId);
-			order.setUserId(user.getId());
-			order.setQuantity(cart.getQuantity());
-			order.setFoodId(cart.getFoodId());
-			order.setDeliveryStatus(Constants.DeliveryStatus.PENDING.value());
-			order.setDeliveryDate(Constants.DeliveryStatus.PENDING.value());
-			orderDao.save(order);
-			cartDao.delete(cart);
-		}
-		
-	
+		String orderId=orderService.orderfoods(user);
+
 	    mv.addObject("status","Order placed Successfully, Order Id is "+orderId);
 		mv.setViewName("index");
 		return mv;
@@ -62,7 +44,7 @@ public class OrderController {
 	@GetMapping("/myorder")
 	public ModelAndView goToMyOrder() {
 		ModelAndView mv = new ModelAndView();
-		List<Orders> orders = orderDao.findAll(); 
+		List<Orders> orders = orderService.findAll();
 		mv.addObject("orders", orders);
 		mv.setViewName("myorder");
 		return mv;
@@ -71,7 +53,7 @@ public class OrderController {
 	@GetMapping("/searchorderbyid")
 	public ModelAndView searchByOrderId(@RequestParam("orderid") String orderId) {
 		ModelAndView mv = new ModelAndView();
-		List<Orders> orders = orderDao.findByOrderId(orderId);
+		List<Orders> orders = orderService.findByOrderId(orderId);
 		mv.addObject("orders", orders);
 		mv.setViewName("myorder");
 		return mv;
@@ -81,7 +63,7 @@ public class OrderController {
 	public ModelAndView searchByOrderDate(@RequestParam("orderdate") String orderDate, HttpSession session) {
 		User user = (User)session.getAttribute("active-user");
 		ModelAndView mv = new ModelAndView();
-		List<Orders> orders = orderDao.findByOrderDateAndUserId(orderDate, user.getId());
+		List<Orders> orders = orderService.findByOrderDateAndUserId(orderDate, user.getId());
 		mv.addObject("orders", orders);
 		mv.setViewName("myorder");
 		return mv;
@@ -100,17 +82,11 @@ public class OrderController {
 	@GetMapping("/updatedeliverydate")
 	public ModelAndView addDeliveryStatus(@RequestParam("orderId") String orderId, @RequestParam("deliveryStatus") String deliveryStatus, @RequestParam("deliveryDate") String deliveryDate ) {
 		ModelAndView mv = new ModelAndView();
-		
-		List<Orders> orders = this.orderDao.findByOrderId(orderId);
-		
-		for(Orders order : orders) {
-			order.setDeliveryDate(deliveryDate);
-			order.setDeliveryStatus(deliveryStatus);
-		    this.orderDao.save(order);
-		}
-			mv.addObject("status", "Order Delivery Status Updated.");
-			mv.setViewName("index");
-	        return mv;
+		orderService.addDeliveryStatus(orderId,deliveryDate,deliveryStatus);
+
+		mv.addObject("status", "Order Delivery Status Updated.");
+		mv.setViewName("index");
+		return mv;
 	}
 	
 	
